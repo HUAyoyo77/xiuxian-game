@@ -1,0 +1,755 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>文字修真传 - 完整版</title>
+    <link rel="stylesheet" href="style.css">
+</head>
+<body>
+    <div class="game-container">
+        <!-- 顶部状态栏（全局固定） -->
+        <div class="status-bar">
+            <div class="status-item">
+                <span class="status-key">角色：</span>
+                <span id="role-info">修真者 | 1级·炼气期初期 | 战力：100</span>
+            </div>
+            <div class="status-item">
+                <span class="status-key">资源：</span>
+                <span id="res-info">灵石：1000 | 灵气：300 | 灵草：0 | 精铁：0</span>
+            </div>
+            <div class="status-item">
+                <span class="status-key">状态：</span>
+                <span id="state-info">未修炼 | 离线收益：8小时</span>
+            </div>
+        </div>
+
+        <!-- 左侧导航栏（全局固定） -->
+        <div class="nav-bar">
+            <button class="nav-btn active" data-view="practice" onclick="switchView('practice')">修炼突破</button>
+            <button class="nav-btn" data-view="gongfa" onclick="switchView('gongfa')">功法系统</button>
+            <button class="nav-btn" data-view="alchemy" onclick="switchView('alchemy')">炼丹炼器</button>
+            <button class="nav-btn" data-view="zongmen" onclick="switchView('zongmen')">宗门系统</button>
+            <button class="nav-btn" data-view="dungeon" onclick="switchView('dungeon')">副本挑战</button>
+            <button class="nav-btn" data-view="task" onclick="switchView('task')">任务中心</button>
+            <button class="nav-btn" data-view="bag" onclick="switchView('bag')">背包道具</button>
+            <button class="nav-btn" data-view="shura" onclick="switchView('shura')">修罗海</button>
+            <button class="nav-btn" data-view="welfare" onclick="switchView('welfare')">福利中心</button>
+            <button class="nav-btn" onclick="gameActions.openSaveManager()">存档管理</button>
+        </div>
+
+        <!-- 主内容区（动态切换） -->
+        <div class="main-content" id="main-view">
+            <!-- 首页内容（默认） -->
+            <div class="content-view active" id="view-home">
+                <div class="content-title">【修真主界面】</div>
+                <div class="module">
+                    <div class="module-title">核心状态</div>
+                    <div class="info-line">
+                        <span class="info-label">当前等级/经验：</span>
+                        <span id="home-level">1级（0/100）</span>
+                    </div>
+                    <div class="info-line">
+                        <span class="info-label">当前境界：</span>
+                        <span id="home-realm">炼气期初期</span>
+                    </div>
+                    <div class="info-line">
+                        <span class="info-label">修炼速度：</span>
+                        <span id="home-speed">10经验/分 | 15灵气/分（引气诀+10%）</span>
+                    </div>
+                    <div class="info-line">
+                        <span class="info-label">可解锁功能：</span>
+                        <span>筑基期（20级）→炼丹 | 金丹期（41级）→炼器 | 元婴期（61级）→宗门 | 化神期（81级）→竞技</span>
+                    </div>
+                    <button class="btn btn-primary" onclick="gameActions.startPractice()">开始修炼</button>
+                    <button class="btn" onclick="gameActions.getOfflineReward()">领取离线收益</button>
+                    <button class="btn" onclick="switchView('practice')">前往突破境界</button>
+                </div>
+                <div class="module">
+                    <div class="module-title">新手引导</div>
+                    <p>1. 点击【开始修炼】自动积累经验/灵气，离线也可挂机</p>
+                    <p>2. 等级提升后可突破境界，解锁更多系统</p>
+                    <p>3. 每日签到可领取大量资源，兑换码：wxzzz666</p>
+                </div>
+            </div>
+
+            <!-- 修炼突破界面 -->
+            <div class="content-view" id="view-practice">
+                <div class="content-title">【修炼突破系统】</div>
+                <!-- 修炼模块 -->
+                <div class="module">
+                    <div class="module-title">修炼中心</div>
+                    <div class="info-line">
+                        <span class="info-label">修炼状态：</span>
+                        <span id="practice-state" class="tag-warning">未修炼</span>
+                    </div>
+                    <div class="info-line">
+                        <span class="info-label">当前地图：</span>
+                        <select id="map-select" onchange="gameActions.changeMap(this.value)" style="padding: 5px; border: 1px solid #ddd; border-radius: 4px;">
+                            <option value="qingshan">青丘山（练气期）</option>
+                            <option value="greenValley">绿柳谷（练气期）</option>
+                            <option value="tianchi">天池（筑基期）</option>
+                            <option value="cloudPeak">云峰（筑基期）</option>
+                            <option value="yaochi">瑶池（金丹期）</option>
+                            <option value="fairyCave">仙洞（金丹期）</option>
+                            <option value="xuantian">玄天秘境（元婴期）</option>
+                            <option value="starryAbyss">星空深渊（元婴期）</option>
+                            <option value="godDomain">化神之域（化神期）</option>
+                            <option value="lawRealm">法则之境（化神期）</option>
+                            <option value="voidRealm">炼虚秘境（炼虚期）</option>
+                            <option value="spaceRift">空间乱流（炼虚期）</option>
+                            <option value="unitySanctuary">合体圣境（合体期）</option>
+                            <option value="daoRealm">道韵之境（合体期）</option>
+                            <option value="celestialRealm">大乘神域（大乘期）</option>
+                            <option value="immortalGate">仙途入口（大乘期）</option>
+                            <option value="tribulationPlatform">渡劫仙台（渡劫期）</option>
+                            <option value="celestialEdge">仙界边缘（渡劫期）</option>
+                        </select>
+                    </div>
+                    <div class="info-line">
+                        <span class="info-label">地图描述：</span>
+                        <span id="map-description">适合练气期修士修炼的地方，灵气稀薄但安全</span>
+                    </div>
+                    <div class="info-line">
+                        <span class="info-label">基础速度：</span>
+                        <span id="practice-base-speed">10经验/分 | 15灵气/分</span>
+                    </div>
+                    <div class="info-line">
+                        <span class="info-label">加成明细：</span>
+                        <span id="practice-bonus">引气诀（1级）+10% | 无法器加成 → 实际：11.5经验/分 | 17.25灵气/分</span>
+                    </div>
+                    <div class="info-line">
+                        <span class="info-label">剩余升级经验：</span>
+                        <span id="practice-exp">100（约8.7分钟）</span>
+                    </div>
+                    <div class="info-line">
+                        <span class="info-label">离线收益上限：</span>
+                        <span>8小时（最多552经验 | 828灵气）</span>
+                    </div>
+                    <div class="info-line">
+                        <span class="info-label">挂机时间：</span>
+                        <span id="practice-time">0分钟</span>
+                    </div>
+                    <button class="btn" onclick="gameActions.useItem('lingQiDan')">使用灵气丹（剩余：<span id="practice-dan">5</span>）</button>
+                    <button class="btn btn-primary" onclick="gameActions.stopPractice()">领取挂机收益</button>
+                    <div class="info-line" style="margin-top:10px;">
+                        <label><input type="checkbox" id="auto-use-dan" onchange="gameData.autoUseDan = this.checked; saveGame()"> 自动使用灵气丹</label>
+                        <label><input type="checkbox" id="auto-get-offline" onchange="gameData.autoGetOffline = this.checked; saveGame()"> 自动领取离线收益</label>
+                        <label><input type="checkbox" id="auto-practice" onchange="gameData.autoPractice = this.checked; saveGame(); if(this.checked) gameActions.startAutoPractice();"> 自动修炼</label>
+                    </div>
+                </div>
+
+                <!-- 突破模块 -->
+                <div class="module">
+                    <div class="module-title">境界突破</div>
+                    <div class="info-line">
+                        <span class="info-label">当前境界/目标：</span>
+                        <span id="break-realm">炼气期初期 → 炼气期中期</span>
+                    </div>
+                    <div class="info-line">
+                        <span class="info-label">突破条件：</span>
+                        <span id="break-conditions">等级≥5（✅） | 灵气≥500（❌ 当前300） | 无道具需求（✅）</span>
+                    </div>
+                    <div class="info-line">
+                        <span class="info-label">突破成功率：</span>
+                        <span id="break-rate">100%（炼气期）</span>
+                    </div>
+                    <div class="info-line">
+                        <span class="info-label">突破收益：</span>
+                        <span>气血+200 | 灵力+100 | 修炼速度+10%</span>
+                    </div>
+                    <button class="btn btn-primary" id="btn-break" onclick="gameActions.breakRealm()" disabled>突破境界</button>
+                </div>
+            </div>
+
+            <!-- 功法系统界面 -->
+            <div class="content-view" id="view-gongfa">
+                <div class="content-title">【功法系统】</div>
+                <div class="module">
+                    <div class="module-title">已装备功法</div>
+                    <div class="item-list" id="gongfa-equipped">
+                        <!-- 动态渲染 -->
+                    </div>
+                </div>
+                <div class="module">
+                    <div class="module-title">功法列表</div>
+                    <div class="item-list" id="gongfa-list">
+                        <!-- 动态渲染 -->
+                    </div>
+                    <div class="info-line">
+                        <span class="info-label">功法合成：</span>
+                        <span>10个对应碎片合成1个功法</span>
+                    </div>
+                    <div class="info-line">
+                        <span class="info-label">功法升级：</span>
+                        <span>10 + 等级×10个对应碎片</span>
+                    </div>
+                </div>
+            </div>
+
+            <!-- 炼丹炼器界面 -->
+            <div class="content-view" id="view-alchemy">
+                <div class="content-title">【炼丹炼器系统】</div>
+                <!-- 炼丹模块 -->
+                <div class="module">
+                    <div class="module-title">炼丹中心（解锁：筑基期）</div>
+                    <div class="info-line" id="alchemy-unlock-tip">
+                        <span class="tag-warning">未解锁：需突破至筑基期（20级）</span>
+                    </div>
+                    <div class="info-line">
+                        <span class="info-label">炼丹等级/经验：</span>
+                        <span id="alchemy-level">0级（0/100）</span>
+                    </div>
+                    <div class="item-list" id="alchemy-list">
+                        <div class="item">
+                            <div>
+                                <span>灵气丹（辅助类）</span>
+                                <span>功效：修炼速度×2 持续10分钟</span>
+                            </div>
+                            <div>
+                                <span>材料：灵草×10 | 灵石×100（当前：0/10 | 1000/100）</span>
+                                <button class="btn" id="btn-make-dan" onclick="gameActions.makeAlchemy('lingQiDan')" disabled>炼制</button>
+                            </div>
+                        </div>
+                        <div class="item">
+                            <div>
+                                <span>金丹丹（突破类）</span>
+                                <span>功效：筑基→金丹突破成功率+10%</span>
+                            </div>
+                            <div>
+                                <span>材料：灵草×50 | 灵石×1000（当前：0/50 | 1000/1000）</span>
+                                <button class="btn" disabled>炼制</button>
+                            </div>
+                        </div>
+                    </div>
+                    <div class="info-line">
+                        <span class="info-label">当前炼丹任务：</span>
+                        <span id="alchemy-task">无</span>
+                    </div>
+                </div>
+
+                <!-- 炼器模块 -->
+                <div class="module">
+                    <div class="module-title">炼器中心（解锁：金丹期）</div>
+                    <div class="info-line" id="forge-unlock-tip">
+                        <span class="tag-warning">未解锁：需突破至金丹期（41级）</span>
+                    </div>
+                    <div class="item-list" id="forge-list">
+                        <div class="item">
+                            <div>
+                                <span>青钢剑（凡品·攻击）</span>
+                                <span>功效：攻击+50</span>
+                            </div>
+                            <div>
+                                <span>材料：精铁×10 | 灵石×200（当前：0/10 | 1000/200）</span>
+                                <button class="btn" id="btn-make-forge" disabled>打造</button>
+                            </div>
+                        </div>
+                        <div class="item">
+                            <div>
+                                <span>青钢甲（凡品·防御）</span>
+                                <span>功效：防御+40</span>
+                            </div>
+                            <div>
+                                <span>材料：精铁×15 | 灵石×300（当前：0/15 | 1000/300）</span>
+                                <button class="btn" disabled>打造</button>
+                            </div>
+                        </div>
+                    </div>
+                    <div class="module-title" style="margin-top:10px;">法器强化</div>
+                    <div class="info-line">
+                        <span class="info-label">当前强化法器：</span>
+                        <span id="forge-stren-item">无</span>
+                    </div>
+                    <div class="info-line">
+                        <span class="info-label">强化消耗：</span>
+                        <span>强化石×2 | 灵石×100（当前：0/2 | 1000/100）</span>
+                    </div>
+                    <button class="btn" id="btn-stren-forge" disabled>强化法器</button>
+                </div>
+            </div>
+
+            <!-- 宗门系统界面 -->
+            <div class="content-view" id="view-zongmen">
+                <div class="content-title">【宗门系统】</div>
+                <div class="module">
+                    <div class="module-title">宗门状态</div>
+                    <div class="info-line" id="zongmen-unlock-tip">
+                        <span class="tag-warning">未解锁：需突破至元婴期（61级）</span>
+                    </div>
+                    <div class="info-line">
+                        <span class="info-label">当前状态：</span>
+                        <span id="zongmen-state">未加入宗门</span>
+                    </div>
+                    <button class="btn" id="btn-create-zongmen" onclick="gameActions.createZongmen()" disabled>创建宗门（需宗门令牌×1 | 灵石×10000）</button>
+                    <button class="btn" id="btn-join-zongmen" onclick="gameActions.showZongmenList()" disabled>加入宗门</button>
+                </div>
+                <div class="module" id="zongmen-list" style="display:none;">
+                    <div class="module-title">宗门列表</div>
+                    <div class="item-list">
+                        <div class="item">
+                            <div>
+                                <span>青云宗（等级1）</span>
+                                <span>人数：1/20 | 宗主：修真者123</span>
+                            </div>
+                            <button class="btn" onclick="gameActions.applyZongmen('青云宗')">申请加入</button>
+                        </div>
+                        <div class="item">
+                            <div>
+                                <span>逍遥阁（等级1）</span>
+                                <span>人数：2/20 | 宗主：修真者456</span>
+                            </div>
+                            <button class="btn" onclick="gameActions.applyZongmen('逍遥阁')">申请加入</button>
+                        </div>
+                    </div>
+                </div>
+                <div class="module" id="zongmen-func" style="display:none;">
+                    <div class="module-title">宗门功能</div>
+                    <button class="btn" onclick="switchView('zongmen-task')">宗门任务</button>
+                    <button class="btn" onclick="switchView('zongmen-shop')">宗门商店</button>
+                    <button class="btn" onclick="switchView('zongmen-chat')">宗门聊天</button>
+                </div>
+            </div>
+
+
+
+            <!-- 任务中心界面 -->
+            <div class="content-view" id="view-task">
+                <div class="content-title">【任务中心】</div>
+                <!-- 日常任务 -->
+                <div class="module">
+                    <div class="module-title">日常任务（每日24点刷新）</div>
+                    <div class="item-list" id="task-daily">
+                        <div class="item">
+                            <div>
+                                <span>修炼2小时</span>
+                                <span class="tag-warning">进度：0/2小时</span>
+                            </div>
+                            <button class="btn" onclick="gameActions.getTaskReward('daily1')" disabled>领取（灵石×200 | 灵气丹×1）</button>
+                        </div>
+                        <div class="item">
+                            <div>
+                                <span>突破1次境界</span>
+                                <span class="tag-warning">进度：0/1</span>
+                            </div>
+                            <button class="btn" onclick="gameActions.getTaskReward('daily2')" disabled>领取（灵石×300 | 灵草×5）</button>
+                        </div>
+                        <div class="item">
+                            <div>
+                                <span>签到1次</span>
+                                <span class="tag-warning">进度：0/1</span>
+                            </div>
+                            <button class="btn" onclick="gameActions.getTaskReward('daily3')" disabled>领取（灵石×100 | 精铁×2）</button>
+                        </div>
+                    </div>
+                    <button class="btn" onclick="gameActions.refreshDailyTask()">刷新日常任务（剩余：2/3次）</button>
+                </div>
+
+                <!-- 主线任务 -->
+                <div class="module">
+                    <div class="module-title">主线任务（跟随境界）</div>
+                    <div class="item-list" id="task-main">
+                        <div class="item">
+                            <div>
+                                <span>突破至炼气期中期</span>
+                                <span class="tag-warning">进度：未完成</span>
+                            </div>
+                            <button class="btn" onclick="gameActions.getTaskReward('main1')" disabled>领取（灵石×500 | 引气诀碎片×2）</button>
+                        </div>
+                        <div class="item">
+                            <div>
+                                <span>等级提升至10级</span>
+                                <span class="tag-warning">进度：1/10</span>
+                            </div>
+                            <button class="btn" onclick="gameActions.getTaskReward('main2')" disabled>领取（灵石×800 | 灵气丹×3）</button>
+                        </div>
+                    </div>
+                </div>
+
+                <!-- 成就任务 -->
+                <div class="module">
+                    <div class="module-title">成就任务（永久有效）</div>
+                    <div class="item-list" id="task-achievement">
+                        <div class="item">
+                            <div>
+                                <span>首次突破境界</span>
+                                <span class="tag-warning">进度：未完成</span>
+                            </div>
+                            <button class="btn" onclick="gameActions.getTaskReward('ach1')" disabled>领取（成就点×10 | 灵石×1000）</button>
+                        </div>
+                        <div class="item">
+                            <div>
+                                <span>炼制10颗丹药</span>
+                                <span class="tag-warning">进度：0/10</span>
+                            </div>
+                            <button class="btn" onclick="gameActions.getTaskReward('ach2')" disabled>领取（成就点×20 | 强化石×5）</button>
+                        </div>
+                    </div>
+                </div>
+            </div>
+
+            <!-- 背包道具界面 -->
+            <div class="content-view" id="view-bag">
+                <div class="content-title">【背包道具系统】</div>
+                <div class="module">
+                    <div class="module-title">消耗品</div>
+                    <div class="item-list" id="bag-consume">
+                        <div class="item">
+                            <span>灵气丹 ×<span id="bag-lingQiDan">5</span></span>
+                            <button class="btn" onclick="gameActions.useItem('lingQiDan')">使用</button>
+                        </div>
+                        <div class="item">
+                            <span>金丹丹 ×<span id="bag-jinDan">0</span></span>
+                            <button class="btn" onclick="gameActions.useItem('jinDan')" disabled>使用</button>
+                        </div>
+                        <div class="item">
+                            <span>加速符 ×<span id="bag-accelerate">3</span></span>
+                            <button class="btn" onclick="gameActions.useItem('accelerate')">使用</button>
+                        </div>
+                    </div>
+                </div>
+                <div class="module">
+                    <div class="module-title">材料</div>
+                    <div class="item-list" id="bag-material">
+                        <div class="item">
+                            <span>灵草 ×<span id="bag-lingCao">0</span></span>
+                            <span>用途：炼丹</span>
+                        </div>
+                        <div class="item">
+                            <span>精铁 ×<span id="bag-iron">0</span></span>
+                            <span>用途：炼器</span>
+                        </div>
+                        <div class="item">
+                            <span>强化石 ×<span id="bag-strenStone">0</span></span>
+                            <span>用途：法器强化</span>
+                        </div>
+                    </div>
+                </div>
+                <div class="module">
+                    <div class="module-title">突破材料</div>
+                    <div class="item-list" id="bag-break">
+                        <div class="item">
+                            <span>练气丹 ×<span id="bag-lianQiDan">0</span></span>
+                            <span>用途：突破到筑基期</span>
+                        </div>
+                        <div class="item">
+                            <span>筑基丹 ×<span id="bag-zhuJiDan">0</span></span>
+                            <span>用途：突破到金丹期</span>
+                        </div>
+                        <div class="item">
+                            <span>金丹液 ×<span id="bag-jinDanYe">0</span></span>
+                            <span>用途：突破到元婴期</span>
+                        </div>
+                        <div class="item">
+                            <span>元婴果 ×<span id="bag-yuanYingGuo">0</span></span>
+                            <span>用途：突破到化神期</span>
+                        </div>
+                        <div class="item">
+                            <span>化神晶 ×<span id="bag-huaShenJing">0</span></span>
+                            <span>用途：突破到炼虚期</span>
+                        </div>
+                        <div class="item">
+                            <span>炼虚石 ×<span id="bag-lianXuShi">0</span></span>
+                            <span>用途：突破到合体期</span>
+                        </div>
+                        <div class="item">
+                            <span>合体莲 ×<span id="bag-heTiLian">0</span></span>
+                            <span>用途：突破到大乘期</span>
+                        </div>
+                        <div class="item">
+                            <span>大乘骨 ×<span id="bag-daChengGu">0</span></span>
+                            <span>用途：突破到渡劫期</span>
+                        </div>
+                        <div class="item">
+                            <span>渡劫丹 ×<span id="bag-duJieDan">0</span></span>
+                            <span>用途：突破到更高境界</span>
+                        </div>
+                        <div class="item">
+                            <span>突破保底符 ×<span id="bag-baoDiFu">0</span></span>
+                            <span>用途：提高突破成功率</span>
+                        </div>
+                    </div>
+                </div>
+                <div class="module">
+                    <div class="module-title">特殊道具</div>
+                    <div class="item-list" id="bag-special">
+                        <div class="item">
+                            <span>宗门令牌 ×<span id="bag-zongmenToken">1</span></span>
+                            <span>用途：创建宗门</span>
+                        </div>
+                        <div class="item">
+                            <span>竞技次数卡 ×<span id="bag-competeCard">0</span></span>
+                            <span>用途：增加竞技次数</span>
+                        </div>
+                    </div>
+                </div>
+            </div>
+
+            <!-- 福利中心界面 -->
+            <div class="content-view" id="view-welfare">
+                <div class="content-title">【福利中心】</div>
+                <!-- 每日签到 -->
+                <div class="module">
+                    <div class="module-title">每日签到</div>
+                    <div class="info-line">
+                        <span class="info-label">当前签到天数：</span>
+                        <span id="welfare-sign">0/7</span>
+                    </div>
+                    <div class="info-line">
+                        <span class="info-label">今日签到奖励：</span>
+                        <span>灵石×500 | 灵气丹×2</span>
+                    </div>
+                    <button class="btn btn-primary" id="btn-sign" onclick="gameActions.signIn()">立即签到</button>
+                    <div class="info-line">
+                        <span class="info-label">累计签到奖励：</span>
+                        <span>7天：宗门令牌×1 | 30天：上品功法碎片×10</span>
+                    </div>
+                </div>
+
+                <!-- 兑换码 -->
+                <div class="module">
+                    <div class="module-title">兑换码</div>
+                    <input type="text" id="cdk-input" placeholder="输入兑换码（例：wxzzz666）" style="padding:8px; width:250px; background:#24242e; border:1px solid #333; color:#fff; border-radius:4px;">
+                    <button class="btn btn-primary" onclick="gameActions.exchangeCDK()">兑换</button>
+                    <div class="info-line" style="margin-top:10px;">
+                        <span class="tag-success">可用兑换码：wxzzz666、xiuzhen888、chuangjian666</span>
+                    </div>
+                </div>
+
+                <!-- 在线福利 -->
+                <div class="module">
+                    <div class="module-title">在线福利</div>
+                    <div class="item-list">
+                        <div class="item">
+                            <span>在线5分钟：灵石×200</span>
+                            <button class="btn" id="btn-online-5" onclick="gameActions.getOnlineReward(5)" disabled>领取</button>
+                        </div>
+                        <div class="item">
+                            <span>在线15分钟：灵草×5</span>
+                            <button class="btn" id="btn-online-15" onclick="gameActions.getOnlineReward(15)" disabled>领取</button>
+                        </div>
+                        <div class="item">
+                            <span>在线30分钟：精铁×5</span>
+                            <button class="btn" id="btn-online-30" onclick="gameActions.getOnlineReward(30)" disabled>领取</button>
+                        </div>
+                    </div>
+                </div>
+            </div>
+            
+            <!-- 副本挑战界面 -->
+            <div class="content-view" id="view-dungeon">
+                <div class="content-title">【副本挑战】</div>
+                <!-- 副本列表 -->
+                <div class="module">
+                    <div class="module-title">副本列表</div>
+                    <div id="dungeon-content" class="item-list">
+                        <!-- 副本列表将通过JavaScript动态生成 -->
+                    </div>
+                </div>
+                <!-- 副本说明 -->
+                <div class="module">
+                    <div class="module-title">副本说明</div>
+                    <div class="info-line">
+                        <span class="info-label">每日次数：</span>
+                        <span>每个副本每日有挑战次数限制</span>
+                    </div>
+                    <div class="info-line">
+                        <span class="info-label">体力消耗：</span>
+                        <span>挑战副本需要消耗灵气作为体力</span>
+                    </div>
+                    <div class="info-line">
+                        <span class="info-label">奖励产出：</span>
+                        <span>不同副本产出不同类型的资源</span>
+                    </div>
+                </div>
+            </div>
+
+            <!-- 修罗海界面 -->
+            <div class="content-view" id="view-shura" style="display: none;">
+                <div class="content-title">【修罗海】</div>
+                <div class="module">
+                    <div class="module-title">无限闯关模式</div>
+                    <div class="info-line">
+                        <span class="info-label">当前关卡：</span>
+                        <span id="shura-level">第1关</span>
+                    </div>
+                    <div class="info-line">
+                        <span class="info-label">最高关卡：</span>
+                        <span id="shura-highest">第1关</span>
+                    </div>
+                    <button class="btn btn-primary" id="shura-start" onclick="gameActions.startShuraFight()">开始战斗</button>
+                    <button class="btn" onclick="gameActions.autoShura()">自动闯关</button>
+                </div>
+                
+                <div class="module">
+                    <div class="module-title">跳关功能</div>
+                    <div class="info-line">
+                        <span class="info-label">增加层数：</span>
+                        <span>
+                            <button class="btn" onclick="gameActions.jumpShuraLevel(10)">+10关</button>
+                            <button class="btn" onclick="gameActions.jumpShuraLevel(50)">+50关</button>
+                            <button class="btn" onclick="gameActions.jumpShuraLevel(100)">+100关</button>
+                        </span>
+                    </div>
+                    <div class="info-line" style="margin-top: 10px;">
+                        <span class="info-label">减少层数：</span>
+                        <span>
+                            <button class="btn" onclick="gameActions.decreaseShuraLevel(10)">-10关</button>
+                            <button class="btn" onclick="gameActions.decreaseShuraLevel(50)">-50关</button>
+                            <button class="btn" onclick="gameActions.decreaseShuraLevel(100)">-100关</button>
+                        </span>
+                    </div>
+                </div>
+                
+                <div class="module" id="shura-battle" style="display: none;">
+                    <div class="module-title">战斗界面</div>
+                    <div class="battle-area">
+                        <div class="battle-character">
+                            <div class="character-info">
+                                <span class="character-name">修真者</span>
+                                <div class="hp-bar">
+                                    <div class="hp-fill" id="player-hp-fill" style="width: 100%"></div>
+                                    <span id="player-hp">500/500</span>
+                                </div>
+                            </div>
+                        </div>
+                        <div class="battle-vs">VS</div>
+                        <div class="battle-enemy">
+                            <div class="enemy-info">
+                                <span class="enemy-name">修罗魔主</span>
+                                <div class="hp-bar">
+                                    <div class="hp-fill enemy-hp" id="enemy-hp-fill" style="width: 100%"></div>
+                                    <span id="enemy-hp">100/100</span>
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+                    <div class="battle-log" id="battle-log">
+                        <div class="log-item">战斗开始！</div>
+                    </div>
+                    <button class="btn" id="shura-next" onclick="gameActions.nextShuraLevel()" style="display: none;">下一关</button>
+                </div>
+            </div>
+        </div>
+
+        <!-- 右侧信息栏（全局联动） -->
+        <div class="side-info">
+            <!-- 角色属性 -->
+            <div class="side-module">
+                <div class="module-title">角色核心属性</div>
+                <div class="info-line">
+                    <span class="info-label">气血：</span>
+                    <span id="side-hp">500/500</span>
+                </div>
+                <div class="info-line">
+                    <span class="info-label">灵力：</span>
+                    <span id="side-mp">300/300</span>
+                </div>
+                <div class="info-line">
+                    <span class="info-label">攻击：</span>
+                    <span id="side-atk">50</span>
+                </div>
+                <div class="info-line">
+                    <span class="info-label">防御：</span>
+                    <span id="side-def">40</span>
+                </div>
+                <div class="info-line">
+                    <span class="info-label">总战力：</span>
+                    <span id="side-power">100</span>
+                </div>
+            </div>
+            
+            <!-- 扩展属性 -->
+            <div class="side-module">
+                <div class="module-title">扩展属性</div>
+                <div class="info-line">
+                    <span class="info-label">暴击：</span>
+                    <span id="side-crit">0%</span>
+                </div>
+                <div class="info-line">
+                    <span class="info-label">暴击伤害：</span>
+                    <span id="side-critDamage">50%</span>
+                </div>
+                <div class="info-line">
+                    <span class="info-label">增伤：</span>
+                    <span id="side-damageIncrease">0%</span>
+                </div>
+                <div class="info-line">
+                    <span class="info-label">减伤：</span>
+                    <span id="side-damageReduction">0%</span>
+                </div>
+                <div class="info-line">
+                    <span class="info-label">连击：</span>
+                    <span id="side-combo">0%</span>
+                </div>
+                <div class="info-line">
+                    <span class="info-label">吸血：</span>
+                    <span id="side-vampire">0%</span>
+                </div>
+                <div class="info-line">
+                    <span class="info-label">复活：</span>
+                    <span id="side-resurrect">否</span>
+                </div>
+            </div>
+
+            <!-- 操作日志 -->
+            <div class="side-module">
+                <div class="module-title">操作日志</div>
+                <div class="log-panel" id="log-panel">
+                    <div class="log-item">游戏初始化完成</div>
+                    <div class="log-item">新手福利已发放：灵气丹×5 | 灵石×1000</div>
+                </div>
+            </div>
+
+            <!-- 资源快捷查看 -->
+            <div class="side-module">
+                <div class="module-title">资源快捷查看</div>
+                <div class="info-line">
+                    <span class="info-label">灵石：</span>
+                    <span id="side-stone">1000</span>
+                </div>
+                <div class="info-line">
+                    <span class="info-label">灵气：</span>
+                    <span id="side-spirit">300</span>
+                </div>
+                <div class="info-line">
+                    <span class="info-label">灵草：</span>
+                    <span id="side-lingCao">0</span>
+                </div>
+                <div class="info-line">
+                    <span class="info-label">精铁：</span>
+                    <span id="side-iron">0</span>
+                </div>
+            </div>
+
+        </div>
+    </div>
+
+    <script src="script.js"></script>
+    <script>
+    // 测试脚本，确保switchView函数可用
+    console.log('Testing switchView function...');
+    if (typeof switchView === 'function') {
+        console.log('switchView function is available');
+    } else {
+        console.error('switchView function is not available');
+    }
+    
+    // 测试导航按钮点击
+    console.log('Testing navigation buttons...');
+    const navButtons = document.querySelectorAll('.nav-btn');
+    console.log(`Found ${navButtons.length} nav buttons`);
+    
+    // 为每个导航按钮添加额外的点击事件监听器，确保点击能够被捕获
+    navButtons.forEach(btn => {
+        btn.addEventListener('click', function(e) {
+            console.log(`Nav button clicked: ${this.textContent}`);
+            const viewId = this.getAttribute('data-view');
+            if (viewId) {
+                console.log(`Switching to view: ${viewId}`);
+            }
+        });
+    });
+    </script>
+</body>
+</html>
